@@ -1,9 +1,14 @@
 from solver import Solver
-from input import FileInput
+from input import FileInput, ImageInput
 from printer import Printer
 
 def main():
-    board = FileInput("easy.txt").read()
+    board = ImageInput("screen_1.png").read()
+
+    p = Printer()
+    p.fill(board)
+    p.print()
+
     s = Solver(board)
 
     try:

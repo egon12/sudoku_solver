@@ -1,27 +1,3 @@
-from PIL import Image
-import numpy as np
-
-def main():
-    img = Image.open('screen.png').convert('L')
-    img = np.array(img)
-    img = trim(img)
-    img = Image.fromarray(img)
-    img.save('screen_trim.png')
-
-    img = np.array(img)
-    img = box(img, 0, 2)
-    img = Image.fromarray(img)
-    img.save('screen_box.png')
-
-    img = np.array(img)
-    img1 = box(img, 0, 0)
-    img1 = Image.fromarray(img1)
-    img1.save('screen_box_1.png')
-
-    img5 = box(img, 1, 1)
-    img5= Image.fromarray(img5)
-    img5.save('screen_box_5.png')
-
 def trim(img):
     # Trim the image to the smallest rectangle that contains all non-white pixels
     # img: 3D array of pixels
@@ -66,6 +42,3 @@ def box(img, row, col):
     bw = img.shape[1] // 3
 
     return img[row*hw:(row+1)*hw, col*bw:(col+1)*bw]
-    
-if __name__ == '__main__':
-    main()
