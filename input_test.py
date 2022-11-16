@@ -1,5 +1,5 @@
 import unittest
-from input import StringInput, FileInput
+from input import StringInput, FileInput, ImageInput
 
 class TestStringInput(unittest.TestCase):
 
@@ -22,6 +22,9 @@ class TestStringInput(unittest.TestCase):
 
         self.assertEqual(board1, board2)
 
+        board3: Board = ImageInput("easy.png").read()
+
+        self.assertEqual(board1, board3)
 
 if __name__ == '__main__':
     unittest.main()
