@@ -1,18 +1,11 @@
 from pathlib import Path
 from PIL import Image
 import numpy as np
+from input import names
 
 def main():
-    split_image("images/img01.png")
-    split_image("images/img02.png")
-    split_image("images/img03.png")
-    split_image("images/img04.png")
-    split_image("images/img05.png")
-    split_image("images/img06.png")
-    split_image("images/img07.png")
-    split_image("images/img08.png")
-    split_image("images/img09.png")
-    split_image("images/img10.png")
+    for name in names():
+        split_image(f"images/{name}.png")
 
 def split_image(filename):
     # Split the image into 9 boxes

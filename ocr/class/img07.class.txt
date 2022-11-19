@@ -58,8 +58,8 @@ img07_62.png;0
 img07_63.png;3
 img07_64.png;2
 img07_65.png;0
-img07_66.png;0
-img07_67.png;4
+img07_66.png;4
+img07_67.png;0
 img07_68.png;8
 img07_70.png;0
 img07_71.png;2

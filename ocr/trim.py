@@ -1,18 +1,10 @@
 from PIL import Image
 import numpy as np
+from input import names
 
 def main():
-    trim_img("images/img01.png")
-    trim_img("images/img02.png")
-    trim_img("images/img03.png")
-    trim_img("images/img03.png")
-    trim_img("images/img04.png")
-    trim_img("images/img05.png")
-    trim_img("images/img06.png")
-    trim_img("images/img07.png")
-    trim_img("images/img08.png")
-    trim_img("images/img09.png")
-    trim_img("images/img10.png")
+    for name in names():
+        trim_img(f"images/{name}.png")
 
 def trim_img(filename):
     img = Image.open(filename).convert('L')

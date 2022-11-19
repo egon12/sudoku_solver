@@ -1,5 +1,5 @@
 img02_00.png;0
-img02_01.png;0
+img02_01.png;6
 img02_02.png;0
 img02_03.png;0
 img02_04.png;0

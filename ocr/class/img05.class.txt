@@ -54,7 +54,7 @@ img05_57.png;3
 img05_58.png;0
 img05_60.png;0
 img05_61.png;3
-img05_62.png;8
+img05_62.png;9
 img05_63.png;7
 img05_64.png;2
 img05_65.png;0

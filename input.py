@@ -38,7 +38,7 @@ class FileInput:
 class ImageInput:
     def __init__(self, filename):
         self.filename = filename
-        self.model = tf.keras.models.load_model("ocr/second.mod")
+        self.model = tf.keras.models.load_model("ocr/third.h5")
 
     def read(self):
         imgs = self.get_numbers_image(self.filename)

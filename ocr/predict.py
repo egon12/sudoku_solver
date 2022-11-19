@@ -5,10 +5,13 @@ import numpy as np
 from PIL import Image
 
 
-model = tf.keras.models.load_model("second.mod")
+model = tf.keras.models.load_model("four.h5")
 
 def filename(basename, x, y):
     return "images/" + basename + "_" + str(y) + str(x) + ".png"
+
+def zero(basename, x, y):
+    return basename + "_" + str(y) + str(x) + ".png"
 
 def oneboard(name):
     res = []
@@ -24,17 +27,24 @@ def onenumber(filename):
     return img
 
 def predict(name):
+    out = ""
     res = model.predict(oneboard(name))
     res = np.argmax(res, axis=1)
     for y in range(9):
         for x in range(9):
-            print(filename(name, x, y) + ";" + str(res[y*9+x]))
+            out += zero(name, x, y) + ";" + str(res[y*9+x]) + "\n"
+    return out
+
 
 def main():
     if len(sys.argv) < 2:
         print("Usage: predict.py <boardname>")
         return
-    predict(sys.argv[1])
+    name = sys.argv[1]
+    out = predict(name)
+    f = open(f"class/{name}.class.txt", "w")
+    f.write(out)
+    f.close()
 
 if __name__ == "__main__":
     main()
