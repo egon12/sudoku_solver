@@ -24,7 +24,7 @@ def loadclass(name):
 
 def oneimg(path):
     img = Image.open("images/" + path).convert('L')
-    img = img.resize((50, 50))
+    img = img.resize((28, 28))
     img = np.array(img)
     img = img.astype(np.float32)
     img = np.multiply(img, 1.0 / 255.0)
@@ -32,14 +32,13 @@ def oneimg(path):
 
 def train(x_train, y_train):
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Flatten(input_shape=(50,50)),
-        tf.keras.layers.Dense(2500, activation='relu'),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(1000, activation='relu'),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(128, activation='relu'),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(10),
+        tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+        tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+        tf.keras.layers.MaxPooling2D(pool_size=(3, 3)),
+        tf.keras.layers.Dropout(0.5),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(250, activation='sigmoid'),
+        tf.keras.layers.Dense(10, activation='softmax')
     ])
 
     predictions = model(x_train[:1]).numpy()
@@ -49,7 +48,7 @@ def train(x_train, y_train):
     loss_fn(y_train[:1], predictions).numpy()
 
     model.compile(optimizer='adam', loss=loss_fn, metrics=['accuracy'])
-    model.fit(x_train, y_train, epochs=100)
+    model.fit(x_train, y_train, epochs=10)
     return model
 
 
@@ -65,5 +64,5 @@ for i in range(1, 23):
     y_train = np.concatenate((y_train, y))
 
 model = train(x_train, y_train)
-model.save("six.h5")
+model.save("nine.h5")
 
