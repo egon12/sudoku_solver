@@ -35,14 +35,50 @@ class TestProbabilities(unittest.TestCase):
 
         self.assertEqual(p.box((6,1)).tolist(), ['1','4','7','2','5','8','3','6','9'])
 
-    def test_set_prob(self):
-
+    def test_in_prob(self):
         p = Probabilities()
-        p.remove((0,3),1)
+        del p[(0,3),1]
 
         new_prob = p[0, 3]
         self.assertEqual(new_prob, [2,3,4,5,6,7,8,9])
         self.assertTrue(2 in p[0,3])
+
+    def test_set_single_prob(self):
+        p = Probabilities()
+        pos = (0,3)
+
+        p[pos] = 1
+
+        new_prob = p[0, 3]
+        self.assertEqual(new_prob, [1])
+        self.assertEqual(p.got_value(pos), 1)
+        self.assertFalse(2 in p[0,3])
+
+    def test_set_multiple_prob(self):
+        p = Probabilities()
+        pos = (0,3)
+
+        p[pos] = [1, 2, 3]
+
+        self.assertEqual(p[pos], [1, 2, 3])
+        self.assertEqual(p.got_value(pos), False)
+        self.assertTrue(1 in p[pos])
+        self.assertTrue(2 in p[pos])
+        self.assertTrue(3 in p[pos])
+        self.assertFalse(4 in p[pos])
+        self.assertFalse(5 in p[pos])
+        self.assertFalse(6 in p[pos])
+
+    def test_del_item(self):
+        p = Probabilities()
+        pos = (0,3)
+
+        p[pos] = [1, 2, 3]
+        self.assertTrue(1 in p[pos])
+        del p[pos, 1]
+        self.assertFalse(1 in p[pos])
+        self.assertTrue(2 in p[pos])
+        self.assertTrue(3 in p[pos])
 
 
 if __name__ == '__main__':

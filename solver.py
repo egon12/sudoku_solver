@@ -8,6 +8,10 @@ class Solver:
         self.board_history_message = []
         self.prob_history = []
         self.prob_history_message = []
+
+        self.save_board("start")
+        self.save_prob("start")
+
         self.update_prob()
 
     def solve(self):
@@ -16,10 +20,9 @@ class Solver:
                 break
 
     def step(self):
-        self.save_prob("step")
         self.minimize_prob()
-        self.get_unique_probability()
-        self.fill_if_possible()
+        self.fill_minimized()
+        self.fill_unique()
 
         if self.board.is_finish():
             print("Finish!!!")
@@ -42,11 +45,13 @@ class Solver:
             update the probability table if
             there are already value in board
         """
+        filled_pos = []
         for pos in self.board.all_filled_cell():
             if not self.prob.got_value(pos):
                 self.prob[pos] = self.board[pos]
-                self.save_prob("{} update from board".format(pos))
+                filled_pos.append(pos)
 
+        self.save_prob("copy from real value for {}".format(filled_pos))
 
     def minimize_prob(self):
         """
@@ -60,56 +65,34 @@ class Solver:
             3. box's siblings
         """
         for pos in self.board.all_empty_cell():
-            removed = False
+            removed = []
 
             for i in self.board.siblings(pos):
                 if i != 0 and i in self.prob[pos]:
-                    self.prob.remove(pos, i)
-                    removed = True
+                    del self.prob[pos, i]
+                    removed.append(i)
 
-            if removed:
-                self.save_prob("{} minimize".format(pos))
+            if len(removed) > 0:
+                self.save_prob("{} is removed from {}".format(removed, pos))
 
-    def get_unique_probability(self):
+    def fill_unique(self):
+        """
+            find unique value within it's group (row, col and box)
+            and if found, set the value in real and prob
+        """
         for pos in self.board.all_empty_cell():
-            y, x = pos
-            have = self.prob[pos]
-            avail = self.prob.row(pos)
-            self.set_unique_prob(pos, have, avail, x, "row")
+            if val := Unique.find(self.prob, pos):
+                num, group = val
+                self.save_prob("set {} as unique val within {} in {}".format(num, group, pos))
+                self.prob[pos] = num 
+                self.board[pos] = num
+                self.save_board()
 
-            have = self.prob[pos]
-            avail = self.prob.col(pos)
-            self.set_unique_prob(pos, have, avail, y, "col")
 
-            have = self.prob[pos]
-            avail = self.prob.box(pos)
-            self.set_unique_prob(pos, have, avail, (y%3) * 3 + (x%3), "box")
-
-    def set_unique_prob(self, pos, have, avail, index_in_avail, type):
-        if len(have) == 1:
-            return
-
-        for i in have:
-            c = str(i)
-
-            found = 0
-            for j in range(len(avail)):
-                if j == index_in_avail:
-                    continue
-                
-                if c in avail[j]:
-                    found += 1
-
-            if found == 0:
-                self.save_prob("{}, unique {}, {}, {}, {}".format(pos, type, have, index_in_avail, avail))
-                self.prob[pos] = i
-                return
-
-    def save_prob(self, message):
-        self.prob_history.append(self.prob.clone())
-        self.prob_history_message.append(message)
-
-    def fill_if_possible(self):
+    def fill_minimized(self):
+        """
+            fill empty cell with prob that only got 1 value
+        """
         filled = False
 
         for pos in self.board.all_empty_cell():
@@ -120,9 +103,16 @@ class Solver:
                     raise Exception(str(valid))
 
         if filled:
-            self.board_history.append(self.board.clone())
-            self.board_history_message.append("filled at {}".format(len(self.prob_history)))
+            self.save_board()
             self.update_prob()
+
+    def save_prob(self, message):
+        self.prob_history.append(self.prob.clone())
+        self.prob_history_message.append(message)
+
+    def save_board(self, message=""):
+        self.board_history.append(self.board.clone())
+        self.board_history_message.append("filled at {}".format(len(self.prob_history)))
                 
     #def get_best_options(self):
 
@@ -148,9 +138,29 @@ class Probabilities:
         return res
 
     def __setitem__(self, key, val):
-        self.arr[key] = str(val)
+        if isinstance(val, list):
+            val.sort()
+            self.arr[key] = ''.join(map(lambda v: str(v), val))
+        elif isinstance(val, int):
+            self.arr[key] = str(val)
+        elif isinstance(val, np.int8):
+            self.arr[key] = str(val)
+        else:
+            raise Exception("cannot set prob with {}".format(type(val)))
+        
+    def __delitem__(self, key):
+        if not isinstance(key, tuple):
+            raise Exception("Need pos to delete probability")
 
-    def __delitem__(self, key, val):
+        if len(key) != 2:
+            raise Exception("Need pos(row,col) to delete probability")
+
+        if isinstance(key[0], tuple):
+            val = key[1]
+            key = key[0]
+            self.arr[key] = self.arr[key].replace(str(val), "")
+            return
+
         self.arr[key] = ""
 
     def __eq__(self, other):
@@ -158,7 +168,6 @@ class Probabilities:
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
 
     def clone(self):
         p = Probabilities()
@@ -172,20 +181,79 @@ class Probabilities:
         val.sort()
         self.arr[key] = ''.join(map(lambda v: str(v), val))
 
+    def row(self, pos):
+        return self.arr[pos[0], :]
+
+    def siblings_row(self, pos):
+        arr = list(self.row(pos))
+        arr[pos[1]] = ''
+        return arr
+
     def col(self, pos):
         return self.arr[:, pos[1]]
 
-    def row(self, pos):
-        return self.arr[pos[0], :]
+    def siblings_col(self, pos):
+        arr = list(self.col(pos))
+        arr[pos[0]] = ''
+        return arr
 
     def box(self, pos):
         row, col = pos
         row, col = row // 3, col // 3
-        return self.arr[row*3:row*3+3, col*3:col*3+3].reshape(1,9)[0]
+
+        row_start = row * 3
+        row_end = row_start + 3
+
+        col_start = col * 3
+        col_end = col_start + 3
+
+        return self.arr[row_start:row_end, col_start:col_end].reshape(1,9)[0]
+
+    def siblings_box(self, pos):
+        arr = list(self.box(pos))
+        row, col = pos
+        index = (row%3) * 3 + (col%3)
+        arr[index] = ''
+        return arr
+
 
     def got_value(self, pos):
         if len(self.arr[pos]) == 1:
-            return self.arr[pos][0]
+            return int(self.arr[pos][0])
         return False
 
 
+class Unique:
+    def find(prob, pos):
+        if num := Unique.find_in(prob.row, prob, pos):
+            return num, 'row'
+
+        if num := Unique.find_in(prob.col, prob, pos):
+            return num, 'col'
+
+        if num := Unique.find_in(prob.box, prob, pos):
+            return num, 'box'
+
+        return False
+
+    def find_in(groups, prob, pos):
+        # all probs that will be evaluated
+        all_probs = list(groups(pos)) # ['1234', '1235', '1278'....]
+
+        # TODO need to check another way to ge the strings
+        pos_prob = prob.arr[pos] # '1235'
+
+        # remove the pos_probe so in the pos_prob can be unique
+        # ex: ['123', '1459', '145', '178'].remove('1459') so we can 9 as unique number
+        all_probs.remove(pos_prob)
+
+        all_number = ''.join(all_probs)
+        unique_number = list(set(all_number))
+        unique_siblings = list(map(int, unique_number)) # {1,2,3,4,7,8}
+
+        # set group_probs[index] to empty so it wouldn't affect the unique
+        for p in prob[pos]:
+            if p not in unique_siblings:
+                return p
+
+        return False

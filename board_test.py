@@ -86,6 +86,12 @@ class TestBoard(unittest.TestCase):
 
         self.assertEqual(board1, board2)
 
+    def test_set_pos_with_str(self):
+        board = Board()
+        pos = (0,0)
+        board[pos] = '1'
+        self.assertEqual(board[pos], 1)
+
 
 if __name__ == '__main__':
     unittest.main()

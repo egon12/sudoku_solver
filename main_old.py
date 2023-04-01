@@ -51,10 +51,12 @@ def main():
             if j < 0:
                 j = k-1
 
+        print(s, i, j, k, l, len(s.prob_history_message), len(s.board_history_message))
         print_solver(s, i, j)
 
 def print_solver(s, i, j):
-    print("probs {}: {}\nboard: {}: {}".format(i, s.prob_history_message[i], j, s.board_history_message[j]))
+    print("probs {}: {}".format(i, s.prob_history_message[i]))
+    print("board: {}: {}".format(j, s.board_history_message[j]))
     p = DualPrinter()
     p.p2.fill_prob(s.prob_history[i])
     p.p1.fill(s.board_history[j])
