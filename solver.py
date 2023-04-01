@@ -1,6 +1,140 @@
 import numpy as np
 
+class Solver:
+    def __init__(self, board):
+        self.board = board
+        self.prob = Probabilities()
+        self.board_history = []
+        self.board_history_message = []
+        self.prob_history = []
+        self.prob_history_message = []
+        self.update_prob()
+
+    def solve(self):
+        for i in range(10000):
+            if not self.step():
+                break
+
+    def step(self):
+        self.save_prob("step")
+        self.minimize_prob()
+        self.get_unique_probability()
+        self.fill_if_possible()
+
+        if self.board.is_finish():
+            print("Finish!!!")
+            return False
+
+        if not self.board.is_valid():
+            print("Invalid value for board")
+            print(self.board.is_valid())
+            return False
+
+        if self.prob == self.prob_history[-1]:
+            self.save_prob("prob are same?")
+            print("prob are same")
+            return False
+
+        return True
+
+    def update_prob(self):
+        """
+            update the probability table if
+            there are already value in board
+        """
+        for pos in self.board.all_filled_cell():
+            if not self.prob.got_value(pos):
+                self.prob[pos] = self.board[pos]
+                self.save_prob("{} update from board".format(pos))
+
+
+    def minimize_prob(self):
+        """
+            First minimize_prob will check the cell is empty.
+            If it is empty, it will check the siblings of the cell.
+            If the siblings has value, it will remove the value from the cell's probability
+
+            The siblings are set from 3 group.
+            1. row's siblings
+            2. columns's siblings
+            3. box's siblings
+        """
+        for pos in self.board.all_empty_cell():
+            removed = False
+
+            for i in self.board.siblings(pos):
+                if i != 0 and i in self.prob[pos]:
+                    self.prob.remove(pos, i)
+                    removed = True
+
+            if removed:
+                self.save_prob("{} minimize".format(pos))
+
+    def get_unique_probability(self):
+        for pos in self.board.all_empty_cell():
+            y, x = pos
+            have = self.prob[pos]
+            avail = self.prob.row(pos)
+            self.set_unique_prob(pos, have, avail, x, "row")
+
+            have = self.prob[pos]
+            avail = self.prob.col(pos)
+            self.set_unique_prob(pos, have, avail, y, "col")
+
+            have = self.prob[pos]
+            avail = self.prob.box(pos)
+            self.set_unique_prob(pos, have, avail, (y%3) * 3 + (x%3), "box")
+
+    def set_unique_prob(self, pos, have, avail, index_in_avail, type):
+        if len(have) == 1:
+            return
+
+        for i in have:
+            c = str(i)
+
+            found = 0
+            for j in range(len(avail)):
+                if j == index_in_avail:
+                    continue
+                
+                if c in avail[j]:
+                    found += 1
+
+            if found == 0:
+                self.save_prob("{}, unique {}, {}, {}, {}".format(pos, type, have, index_in_avail, avail))
+                self.prob[pos] = i
+                return
+
+    def save_prob(self, message):
+        self.prob_history.append(self.prob.clone())
+        self.prob_history_message.append(message)
+
+    def fill_if_possible(self):
+        filled = False
+
+        for pos in self.board.all_empty_cell():
+            if val := self.prob.got_value(pos):
+                self.board[pos] = val
+                filled = True
+                if not (valid := self.board.is_valid()):
+                    raise Exception(str(valid))
+
+        if filled:
+            self.board_history.append(self.board.clone())
+            self.board_history_message.append("filled at {}".format(len(self.prob_history)))
+            self.update_prob()
+                
+    #def get_best_options(self):
+
+    #def get_cells_with_num_options(self, num):
+    #    for y in range(9):
+    #        for x in range(9):
+    #    
+
 class Probabilities:
+    """
+    9x9 array of probabilities
+    """
     def __init__(self):
         p = "123456789"
         p = np.array([p,p,p,p,p,p,p,p,p])
@@ -34,137 +168,24 @@ class Probabilities:
     def remove(self, key, val):
         self.arr[key] = self.arr[key].replace(str(val), "")
 
-    def col(self, col):
-        return self.arr[:, col]
+    def set(self, key, val):
+        val.sort()
+        self.arr[key] = ''.join(map(lambda v: str(v), val))
 
-    def row(self, row):
-        return self.arr[row, :]
+    def col(self, pos):
+        return self.arr[:, pos[1]]
 
-    def box(self, row, col):
+    def row(self, pos):
+        return self.arr[pos[0], :]
+
+    def box(self, pos):
+        row, col = pos
         row, col = row // 3, col // 3
         return self.arr[row*3:row*3+3, col*3:col*3+3].reshape(1,9)[0]
 
+    def got_value(self, pos):
+        if len(self.arr[pos]) == 1:
+            return self.arr[pos][0]
+        return False
 
-
-class Solver:
-    def __init__(self, board):
-        self.board = board
-        self.prob = Probabilities()
-        self.board_history = []
-        self.prob_history = []
-        self.prob_history_message = []
-        self.update_prob()
-
-    def save_prob(self, message):
-        self.prob_history.append(self.prob.clone())
-        self.prob_history_message.append(message)
-
-
-    def solve(self):
-        for i in range(10000):
-            if not self.step():
-                break
-
-    def step(self):
-        self.board_history.append(self.board.clone())
-        self.save_prob("step")
-        self.minimizeProbabilities()
-        self.getUniqueProbabilities()
-        self.fill_if_possible()
-        self.update_prob()
-
-        if self.prob == self.prob_history[-1]:
-            print("prob are same")
-            return False
-
-        if not self.board.is_valid():
-            print(self.board.is_valid())
-            print("board not valid")
-            return False
-
-        if self.board.is_finish():
-            print("board are finish")
-            return False
-
-        return True
-
-    def update_prob(self):
-        for y in range(9):
-            for x in range(9):
-                i = self.board[y, x]
-                if i != 0 and len(self.prob[y,x]) > 1:
-                    self.prob[y, x] = i
-                    self.save_prob("{} update".format((x,y)))
-
-
-
-    def minimizeProbabilities(self):
-        for y in range(9):
-            for x in range(9):
-                if self.board[y, x] == 0:
-                    self.minimizeProbabilitiesForCell(x, y)
-
-    def getUniqueProbabilities(self):
-        for y in range(9):
-            for x in range(9):
-                if self.board[y, x] == 0:
-                    self.getUnique(x, y)
-
-
-    def getUnique(self, x, y):
-        have = self.prob[y, x]
-        avail = self.prob.row(y)
-        self.set_unique_prob(x, y, have, avail, x, "row")
-
-        have = self.prob[y, x]
-        avail = self.prob.col(x)
-        self.set_unique_prob(x, y, have, avail, y, "col")
-
-        have = self.prob[y, x]
-        avail = self.prob.box(y, x)
-        self.set_unique_prob(x, y, have, avail, (y%3) * 3 + (x%3), "box")
-
-
-
-    def set_unique_prob(self, x, y, have, avail, index_in_avail, type):
-        if len(have) == 1:
-            return
-
-        for i in have:
-            c = str(i)
-
-            found = 0
-            for j in range(len(avail)):
-                if j == index_in_avail:
-                    continue
-                
-                if c in avail[j]:
-                    found += 1
-
-
-            if found == 0:
-                self.save_prob("{}, unique {}, {}, {}, {}".format((x,y), type, have, index_in_avail, avail))
-                self.prob[y, x] = i
-                return
-
-
-    def minimizeProbabilitiesForCell(self, x, y):
-        b = self.board
-        avail = list(b.row(y)) + list(b.col(x)) + list(b.box(y, x))
-        avail = list(set(avail))
-        for i in avail:
-            if i != 0 and len(self.prob[y, x]) > 1:
-                self.prob.remove((y, x), i)
-                self.save_prob("{}, minimize".format((x,y)))
-
-
-    def fill_if_possible(self):
-        for y in range(9):
-            for x in range(9):
-                if self.board[y, x] == 0:
-                    if len(self.prob[y, x]) == 1:
-                        self.board[y, x] = self.prob[y, x][0]
-                        val =self.board.is_valid()
-                        if not val:
-                            raise Exception(val.__str__())
 

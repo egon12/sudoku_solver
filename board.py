@@ -1,6 +1,19 @@
 import numpy as np
 
 class Board:
+    """
+    class Board contains the real value of the sudoku cell.
+
+    to access the cell you must use the following syntax:
+
+        board[row, col] = value
+        board[row, col] = 0
+
+    and to get the value of the cell:
+        
+        value = board[row, col]
+
+    """
     def __init__(self):
         self.board = np.zeros((9,9), dtype=np.int8)
 
@@ -26,13 +39,14 @@ class Board:
     def fill(self, arr):
         self.board = np.array(arr, dtype=np.int8).reshape(9,9)
 
-    def col(self, col):
-        return self.board[:, col]
+    def col(self, pos):
+        return self.board[:, pos[1]]
 
-    def row(self, row):
-        return self.board[row, :]
+    def row(self, pos):
+        return self.board[pos[0], :]
 
-    def box(self, row, col):
+    def box(self, pos):
+        row, col = pos
         row, col = row // 3, col // 3
         return self.board[row*3:row*3+3, col*3:col*3+3].reshape(1,9)[0]
 
@@ -44,32 +58,52 @@ class Board:
     def is_valid(self):
         return Validator.validate_board(self)
 
+    def is_empty(self, key):
+        return self.board[key] == 0
+
+    def siblings(self, pos):
+        avail = list(self.row(pos)) + list(self.col(pos)) + list(self.box(pos))
+        return list(set(avail))
+
+    def all_cell(self):
+        for row in range(9):
+            for col in range(9):
+                yield(row, col)
+
+    def all_empty_cell(self):
+        return filter(self.is_empty, self.all_cell())
+
+    def all_filled_cell(self):
+        return filter(lambda c: not self.is_empty(c), self.all_cell())
+
 class Validator:
     def validate_board(board: Board):
         for row in range(9):
             for col in range(9):
-                validation = Validator.validate_cell(board, row, col)
-                if not validation:
+                pos = (row, col)
+                if not (validation := Validator.validate_cell(board, pos)):
                     return validation
         return Validation(True, "")
 
-    def validate_cell(board, row, col):
-        if board[row, col] == 0:
+    def validate_cell(board, pos):
+        if board[pos] == 0:
             return Validation(True, "")
 
-        val = board[row, col]
+        val = board[pos]
 
-        arr = board.row(row)
+        row, col = pos
+
+        arr = board.row(pos)
         for i in range(9):
             if i != col and arr[i] == val:
                 return Validation(False, "Row {} has duplicate value {} at col {} and {}".format(row + 1, val, col + 1, i + 1))
 
-        arr = board.col(col)
+        arr = board.col(pos)
         for i in range(9):
             if i != row and arr[i] == val:
                 return Validation(False, "Col {} has duplicate value {} at row {} and {}".format(col + 1, val, row + 1, i + 1))
 
-        arr = board.box(row, col)
+        arr = board.box((row, col))
         dup = False
         for i in arr:
             if i == val:

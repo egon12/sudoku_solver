@@ -19,9 +19,16 @@ class TestBoard(unittest.TestCase):
             [6,7,8,9,1,2,3,4,5],
             [9,1,2,3,4,5,6,7,8],
             ])
-        self.assertEqual(self.board.row(0).tolist(), [1, 2, 3, 4, 5, 6, 7, 8, 9])
-        self.assertEqual(self.board.col(0).tolist(), [1, 4, 7, 2, 5, 8, 3, 6, 9])
-        self.assertEqual(self.board.box(0,0).tolist(), [1, 2, 3, 4, 5, 6, 7, 8, 9])
+        pos = (0, 0)
+        self.assertEqual(self.board.row(pos).tolist(), [1, 2, 3, 4, 5, 6, 7, 8, 9])
+        self.assertEqual(self.board.col(pos).tolist(), [1, 4, 7, 2, 5, 8, 3, 6, 9])
+        self.assertEqual(self.board.box(pos).tolist(), [1, 2, 3, 4, 5, 6, 7, 8, 9])
+        self.assertEqual(self.board[4,4], 9)
+        self.assertEqual(self.board[3,4], 6)
+
+    def test_board_cell_is_empty(self):
+        board = Board()
+        self.assertTrue(board.is_empty((0, 0)))
 
     def test_board_is_valid(self):
         self.board.fill([
@@ -48,7 +55,7 @@ class TestBoard(unittest.TestCase):
             [0,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0,0],
             ])
-        self.assertEqual(self.board.is_valid(), Validation(False, "Box 0, 0 has duplicate value 1"))
+        self.assertEqual(self.board.is_valid(), Validation(False, "Box (0,0) has duplicate value 1"))
 
     def test_board_equal(self):
         board1 = Board()

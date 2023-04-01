@@ -26,17 +26,21 @@ class TestSolver(unittest.TestCase):
         #p.fill(s.board)
         #p.print()
 
-        p.p1.fill_prob(s.prob)
-        p.p2.fill(s.board)
+        p.p1.fill(s.board)
+        p.p2.fill_prob(s.prob)
         print(len(s.board_history))
 
         p.print()
 
-        p = DualPrinter()
-        p.p1.fill_prob(s.prob_history[-2])
-        p.p2.fill_prob(s.prob_history[-1])
-        p.print()
+        #p = DualPrinter()
+        #p.p1.fill_prob(s.prob_history[-2])
+        #p.p2.fill_prob(s.prob_history[-1])
+        #p.print()
         self.assertTrue(s.board.is_valid())
+
+        board = FileInput("easy_result.txt").read()
+
+        self.assertEqual(board, s.board)
 
 
 
