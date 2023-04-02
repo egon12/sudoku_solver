@@ -84,11 +84,11 @@ class Validator:
                 pos = (row, col)
                 if not (validation := Validator.validate_cell(board, pos)):
                     return validation
-        return Validation(True, "")
+        return Valid()
 
     def validate_cell(board, pos):
         if board[pos] == 0:
-            return Validation(True, "")
+            return Valid()
 
         val = board[pos]
 
@@ -97,25 +97,23 @@ class Validator:
         arr = board.row(pos)
         for i in range(9):
             if i != col and arr[i] == val:
-                return Validation(False, "Row {} has duplicate value {} at col {} and {}".format(row + 1, val, col + 1, i + 1))
+                return Invalid("Row {} has duplicate value {} at col {} and {}".format(row + 1, val, col + 1, i + 1))
 
         arr = board.col(pos)
         for i in range(9):
             if i != row and arr[i] == val:
-                return Validation(False, "Col {} has duplicate value {} at row {} and {}".format(col + 1, val, row + 1, i + 1))
+                return Invalid("Col {} has duplicate value {} at row {} and {}".format(col + 1, val, row + 1, i + 1))
 
         arr = board.box((row, col))
         dup = False
         for i in arr:
             if i == val:
                 if dup:
-                    return Validation(False, "Box ({},{}) has duplicate value {}".format(col, row, val))
+                    return Invalid("Box ({},{}) has duplicate value {}".format(col, row, val))
                 else:
                     dup = True
 
-        return Validation(True, "")
-
-
+        return Valid()
 
 class Validation:
     def __init__(self, is_valid, error_message):
@@ -129,7 +127,13 @@ class Validation:
         return self.is_valid
 
     def __eq__(self, other):
-        return self.is_valid == other.is_valid and self.error_message == other.error_message
+        if isinstance(other, type):
+            return isinstance(self, other)
+
+        if isinstance(other, Validation):
+            return self.is_valid == other.is_valid and self.error_message == other.error_message
+
+        raise Exception("Cannot compare Invalid with {}".format(type(other)))
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -139,3 +143,11 @@ class Validation:
 
     def __str__(self):
         return self.__repr__()
+
+class Invalid(Validation):
+    def __init__(self, error_message):
+        super().__init__(False, error_message)
+
+class Valid(Validation):
+    def __init__(self):
+        super().__init__(True, "")

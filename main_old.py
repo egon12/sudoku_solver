@@ -20,7 +20,11 @@ def main():
     b = ImageInput("screen_1.png").read()
     s = Solver(b)
     w = Backtrack(s)
-    c = w.walk()
+
+    try: 
+        c = w.walk()
+    except Exception as e:
+        print(e)
 
     while(True):
         interact(s)

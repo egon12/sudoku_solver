@@ -1,5 +1,5 @@
 import numpy as np
-from board import Board, Validation
+from board import Board, Validation, Invalid
 
 class Option:
     def __init__(self, pos, value):
@@ -10,13 +10,6 @@ class Option:
         return "{}: {}".format(self.pos, self.value)
 
 class Finish():
-    def __bool__(self):
-        return False
-
-class Invalid(BaseException):
-    def __init__(self, validation: Validation):
-        self.validation = validation
-
     def __bool__(self):
         return False
 
@@ -52,7 +45,7 @@ class Solver:
                 
 
     def step(self):
-        try:
+        try: 
             self.minimize_prob()
             self.fill_minimized()
             self.fill_unique()
@@ -61,11 +54,12 @@ class Solver:
                 return Finish()
 
             if not (validation := self.board.is_valid()):
-                return Invalid(validation)
+                #print(validation)
+                return validation
 
             if self.prob == self.prob_history[-1]:
+                #print("Stuck at {}".format(len(self.prob_history)))
                 return Stuck(self.board.clone(), len(self.board_history) -1)
-
         except Invalid as e:
             return e
 
@@ -297,7 +291,7 @@ class Backtrack:
         return next(fin)
 
     def rec_walk(self, cond):
-        if isinstance(cond, Invalid):
+        if cond == Invalid:
             return cond
 
         if isinstance(cond, Finish):
@@ -310,3 +304,5 @@ class Backtrack:
                 yield from self.rec_walk(new_cond)
 
         raise Exception("Deadend")
+
+

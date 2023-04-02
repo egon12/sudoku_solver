@@ -1,5 +1,5 @@
 import unittest
-from board import Board, Validation
+from board import Board, Validation, Invalid, Valid
 
 class TestBoard(unittest.TestCase):
     def setUp(self):
@@ -92,6 +92,12 @@ class TestBoard(unittest.TestCase):
         board[pos] = '1'
         self.assertEqual(board[pos], 1)
 
+class TestValidation(unittest.TestCase):
+
+    def test_compare_inalid(self):
+        invalid = Invalid("some invalid case")
+        self.assertEqual(invalid, Invalid)
+        self.assertTrue(invalid == Invalid)
 
 if __name__ == '__main__':
     unittest.main()
