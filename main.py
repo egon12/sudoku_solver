@@ -31,7 +31,7 @@ def main():
         probabilities = ks.possibilities_cell(group)
         for cell in group.cells:
             position = group.pos(cell)
-            prob.set(position, probabilities)
+            prob[position] = probabilities
 
     s = Solver(b)
     s.prob = prob
@@ -59,13 +59,13 @@ def kill_step(bg: BoardGroup, ks: KillerSolver, board: Board, prob: Probabilitie
                 includes.append(f)
 
         if g.is_one_row():
-            excludes += board.row(g.row()).tolist()
+            excludes += board.row(g.first_pos()).tolist()
 
         if g.is_one_col():
-            excludes += board.col(g.col()).tolist()
+            excludes += board.col(g.first_pos()).tolist()
 
         if g.is_one_box():
-            excludes += board.col(g.col()).tolist()
+            excludes += board.box(g.first_pos()).tolist()
 
         for i in includes:
             if i in excludes:
@@ -74,7 +74,7 @@ def kill_step(bg: BoardGroup, ks: KillerSolver, board: Board, prob: Probabilitie
         som = ks.possibilities_cell(g, include=includes, exclude=excludes)
         for c in g.cells:
             x, y = getxy(c)
-            prob.set((y, x), som)
+            prob[y, x] = som
 
 
 def getxy(c):

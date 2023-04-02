@@ -22,7 +22,8 @@ class Board:
 
     def __setitem__(self, key, value):
         if self.board[key] != 0:
-            raise Exception("Cell is already filled")
+            print(self.board)
+            raise Exception("Cell {} is already filled".format(key))
         self.board[key] = value
 
     def __eq__(self, other):

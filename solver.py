@@ -1,4 +1,35 @@
 import numpy as np
+from board import Board, Validation
+
+class Option:
+    def __init__(self, pos, value):
+        self.pos = pos
+        self.value = value
+
+    def __str__(self):
+        return "{}: {}".format(self.pos, self.value)
+
+class Finish():
+    def __bool__(self):
+        return False
+
+class Invalid(BaseException):
+    def __init__(self, validation: Validation):
+        self.validation = validation
+
+    def __bool__(self):
+        return False
+
+class Stuck:
+    def __init__(self, board: Board, board_index:int = 0, prob_index:int = 0):
+        self.board = board
+        self.board_index = board_index
+
+    def __bool__(self):
+        return False
+
+    def __repr__(self):
+        return str(self.board.board)
 
 class Solver:
     def __init__(self, board):
@@ -16,27 +47,27 @@ class Solver:
 
     def solve(self):
         for i in range(10000):
-            if not self.step():
-                break
+            if not (condition := self.step()):
+                return condition
+                
 
     def step(self):
-        self.minimize_prob()
-        self.fill_minimized()
-        self.fill_unique()
+        try:
+            self.minimize_prob()
+            self.fill_minimized()
+            self.fill_unique()
 
-        if self.board.is_finish():
-            print("Finish!!!")
-            return False
+            if self.board.is_finish():
+                return Finish()
 
-        if not self.board.is_valid():
-            print("Invalid value for board")
-            print(self.board.is_valid())
-            return False
+            if not (validation := self.board.is_valid()):
+                return Invalid(validation)
 
-        if self.prob == self.prob_history[-1]:
-            self.save_prob("prob are same?")
-            print("prob are same")
-            return False
+            if self.prob == self.prob_history[-1]:
+                return Stuck(self.board.clone(), len(self.board_history) -1)
+
+        except Invalid as e:
+            return e
 
         return True
 
@@ -99,8 +130,6 @@ class Solver:
             if val := self.prob.got_value(pos):
                 self.board[pos] = val
                 filled = True
-                if not (valid := self.board.is_valid()):
-                    raise Exception(str(valid))
 
         if filled:
             self.save_board()
@@ -114,12 +143,21 @@ class Solver:
         self.board_history.append(self.board.clone())
         self.board_history_message.append("filled at {}".format(len(self.prob_history)))
                 
-    #def get_best_options(self):
+    def get_best_options(self):
+        pos, prob = self.prob.smallest_probability()
+        return list(map(lambda val: Option(pos, int(val)), prob))
 
-    #def get_cells_with_num_options(self, num):
-    #    for y in range(9):
-    #        for x in range(9):
-    #    
+    def follow_option(self, option: Option):
+        self.board[option.pos] = option.value
+        self.prob[option.pos] = option.value
+        self.save_prob("choose option {}".format(option))
+        self.save_board()
+        return self.solve()
+
+    def back_to(self, stuck: Stuck):
+        self.board = stuck.board.clone()
+        self.prob = Probabilities()
+        self.update_prob()
 
 class Probabilities:
     """
@@ -174,55 +212,44 @@ class Probabilities:
         p.arr = self.arr.copy()
         return p
 
-    def remove(self, key, val):
-        self.arr[key] = self.arr[key].replace(str(val), "")
-
-    def set(self, key, val):
-        val.sort()
-        self.arr[key] = ''.join(map(lambda v: str(v), val))
-
     def row(self, pos):
         return self.arr[pos[0], :]
-
-    def siblings_row(self, pos):
-        arr = list(self.row(pos))
-        arr[pos[1]] = ''
-        return arr
 
     def col(self, pos):
         return self.arr[:, pos[1]]
 
-    def siblings_col(self, pos):
-        arr = list(self.col(pos))
-        arr[pos[0]] = ''
-        return arr
-
     def box(self, pos):
         row, col = pos
-        row, col = row // 3, col // 3
 
-        row_start = row * 3
-        row_end = row_start + 3
+        r_start = (row // 3) * 3
+        c_start = (col // 3) * 3
 
-        col_start = col * 3
-        col_end = col_start + 3
+        r_end = r_start + 3
+        c_end = c_start + 3
 
-        return self.arr[row_start:row_end, col_start:col_end].reshape(1,9)[0]
-
-    def siblings_box(self, pos):
-        arr = list(self.box(pos))
-        row, col = pos
-        index = (row%3) * 3 + (col%3)
-        arr[index] = ''
-        return arr
-
+        return self.arr[r_start:r_end, c_start:c_end].reshape(1,9)[0]
 
     def got_value(self, pos):
         if len(self.arr[pos]) == 1:
             return int(self.arr[pos][0])
         return False
 
+    def smallest_probability(self):
+        for num in range(2, 10):
+            if got := self.get_pos_with_number(num):
+                return got
+        raise Exception("Probability table is broken")
 
+
+    def get_pos_with_number(self, num):
+        for row in range(9):
+            for col in range(9):
+                pos = (row, col)
+                pro = self.arr[pos]
+                if len(pro) == num:
+                    return pos, pro
+        return False
+                    
 class Unique:
     def find(prob, pos):
         if num := Unique.find_in(prob.row, prob, pos):
@@ -257,3 +284,29 @@ class Unique:
                 return p
 
         return False
+
+class Backtrack:
+    def __init__(self, solver):
+        self.solver = solver
+        self.condition = []
+        self.memory = {}
+
+    def walk(self):
+        cond = self.solver.solve()
+        fin = self.rec_walk(cond)
+        return next(fin)
+
+    def rec_walk(self, cond):
+        if isinstance(cond, Invalid):
+            return cond
+
+        if isinstance(cond, Finish):
+            yield cond
+
+        if isinstance(cond, Stuck):
+            for idx, opt in enumerate(self.solver.get_best_options()):
+                self.solver.back_to(cond)
+                new_cond = self.solver.follow_option(opt)
+                yield from self.rec_walk(new_cond)
+
+        raise Exception("Deadend")

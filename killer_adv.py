@@ -37,6 +37,9 @@ class Group:
     def box(self):
         return self.pos(self.cells[0])
 
+    def first_pos(self):
+        return self.pos(self.cells[0])
+
 
 class BoardGroup:
     def __init__(self, groups):
